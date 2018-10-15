@@ -6,36 +6,75 @@
 #include <stdlib.h>
 #include "defs.h"
 
-void procesoHijo(int np, int *datos){
-	int mayor, menor,*orden,promedio;
-	 printf("proseso hijo %d, ejecutando con el PID: %d \n",np, getpid()); 
-	 //while(1);
+int enviar[N];
+int recibir[N];
+
+void procesoHijo(int np, int *datos,int pipefd[]){
+	int mayor, menor,*orden,promedio; 
 	 if(np == 0){
-	 	mayor = Mayor(datos);	
-	 	exit(mayor);
+	 	mayor = Mayor(datos);
+	 	close(pipefd[0]);
+	 	write(pipefd[1],&mayor,sizeof(int));	
+	 	close(pipefd[1]);
+	 	printf("proseso hijo %d, ejecutando con el PID: %d \n",np, getpid());
+	 	exit(np);
 	 }
 	 else if(np == 1){
 	 	menor = Menor(datos);
-	 	exit(menor);
+	 	close(pipefd[0]);
+	 	write(pipefd[1],&menor,sizeof(int));	
+	 	close(pipefd[1]);
+	 	exit(np);
 	 }
 	 else if(np == 2){
 	 	promedio = Promedio(datos);
-	 	exit(promedio);
+	 	close(pipefd[0]);
+	 	write(pipefd[1],&Promedio,sizeof(int));	
+	 	close(pipefd[1]);
 	 }
 	 else if(np ==3){
-	 	orden = Orden(datos);
-	 	printf("datos ordenados: ");
-	 	imprimir(datos);
+	 	 register int i;
+	 	 close(pipefd[0]);
+	 	 orden(*datos);
+	 	 for (i=0;i<N;i++){
+	 	 	enviar[i] = datos[i];
+	 	 	write(pipefd[1],&enviar[i],sizeof(int));	
+ 		 }
+	 	close(pipefd[1]);
 
 	 }
-	 exit(np);
 }
-void procesoPadre(){
-	int numero;
+void procesoPadre(int pipefd[] ){
+	int npc;
+	int mayor, menor,promedio;
 	pid_t pid_Hijo;
 	printf("proceso padre ejecutado: %d\n", getpid());
+	close(pipefd[1]);
 	for(int np = 0; np<NUM_PROC; np++){
-		pid_Hijo = wait(&numero);
-		printf("este es el pid terminado con el pid: %d\n y retorno %d\n", pid_Hijo, numero>>8);
+		pid_Hijo = wait(&npc);
+		npc = npc>>8;
+		if(npc ==0){
+			read(pipefd[0],&mayor,sizeof(int));
+			printf("el proceso %d este es el pid %d terminado con el mayor: %d\n",npc, pid_Hijo,mayor);
+		}
+		else if(npc ==1){
+			read(pipefd[0],&menor,sizeof(int));
+			printf("el proceso %d este es el pid %d terminado con el menor: %d\n",npc, pid_Hijo,menor);
+		}
+		else if(npc ==2){
+			read(pipefd[0],&promedio,sizeof(int));
+			printf("el proceso %d este es el pid %d terminado con el promedio: %d\n",npc, pid_Hijo,promedio);
+		}
+		else if(npc ==3){
+			printf("Arreglo ordenado");
+			for(int i=0; i<N;i++){
+				read(pipefd[0],&recibir[i],sizeof(int));
+				printf("%d",&recibir[i]);
+				if(i<N-1){
+					printf(",");
+				}
+			}
+
+		}
 	}
 }

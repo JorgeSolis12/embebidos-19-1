@@ -9,11 +9,17 @@
 
 int main(){
 	pid_t pid;
-	int *datos;
+	int *datos,pipefd[2],pipe_status;
 	datos = memoria();
 	llenarArreglo(datos);
 	imprimir(datos);
 	printf("probando procesos \n");
+	pipe_status =pipe(pipefd);
+	if(pipe_status==-1){
+		perror("Error al crear el pipe");
+		exit(EXIT_FAILURE);
+	}
+
 	for(int i = 0; i< NUM_PROC; i++){
     	 pid = fork();
 		 if(pid == -1){
@@ -21,11 +27,11 @@ int main(){
 		 	exit(EXIT_FAILURE);
 		 }
 		 if(!pid){
-		  	procesoHijo(i, datos); 
+		  	procesoHijo(i, datos,pipefd); 
 		 }
 
 	}
-	procesoPadre();
+	procesoPadre(pipefd);
 	free(datos);
 	return 0;
 }

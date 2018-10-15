@@ -4,6 +4,6 @@
 int Mayor(int * datos);
 int Menor(int * datos);
 int Promedio(int *datos);
-int Orden(int *datos);
+void Orden(int *datos);
 
 #endif
